@@ -19,6 +19,4 @@ This dataset is a meticulously curated collection of weather data for time serie
 <div style="border-radius: 10px; overflow: hidden; text-align: center;">
     <img src="https://www.analyticssteps.com/backend/media/thumbnail/6006173/6278986_1571298721_Weather_Forecoast_Graphics.jpg" alt="Time Series Forecasting" width="900">
 </div>
-
-##### Thank you for taking the time to read. Please don't ignore voting.
 </div>
