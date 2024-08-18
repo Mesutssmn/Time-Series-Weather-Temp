@@ -7,7 +7,7 @@ from statsmodels.tsa.holtwinters import ExponentialSmoothing
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 
 # Load the dataset
-@st.cache
+@st.cache_data
 def load_data():
     train = pd.read_csv('ClimateTrain.csv')
     test = pd.read_csv('ClimateTest.csv')
@@ -106,8 +106,3 @@ elif forecast_type == "SARIMA":
     y_pred_sarima = sarima_model.get_forecast(steps=len(test)).predicted_mean
     plot_forecast(train, test, y_pred_sarima, "SARIMA Forecast")
     st.write(f"Mean Absolute Error (MAE): {np.mean(np.abs(test - y_pred_sarima)):.4f}")
-
-# Run the app
-if __name__ == "__main__":
-    st.set_option('deprecation.showPyplotGlobalUse', True)
-
