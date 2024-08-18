@@ -20,8 +20,8 @@ def load_data():
 df = load_data()
 
 # Sidebar options
-st.sidebar.header("Select Forecast Type")
-forecast_type = st.sidebar.selectbox("Select Model", ["Single Exponential Smoothing", "Double Exponential Smoothing", "Triple Exponential Smoothing", "SARIMA"])
+st.sidebar.header("Select Forecast Model")
+forecast_type = st.sidebar.selectbox("Choose a Model", ["Triple Exponential Smoothing (Holt-Winters)", "SARIMA"])
 
 # User-defined date range
 st.sidebar.header("Select Date Range")
@@ -52,26 +52,8 @@ else:
     train = filtered_data['meantemp'][:int(len(filtered_data)*0.8)]
     test = filtered_data['meantemp'][int(len(filtered_data)*0.8):]
 
-    # Single Exponential Smoothing
-    if forecast_type == "Single Exponential Smoothing":
-        st.subheader("Single Exponential Smoothing")
-        alpha = 0.1  # Best alpha after optimization
-        ses_model = ExponentialSmoothing(train).fit(smoothing_level=alpha)
-        y_pred_ses = ses_model.forecast(len(test))
-        plot_forecast(train, test, y_pred_ses, "Single Exponential Smoothing Forecast")
-        st.write(f"Mean Absolute Error (MAE): {np.mean(np.abs(test - y_pred_ses)):.4f}")
-
-    # Double Exponential Smoothing
-    elif forecast_type == "Double Exponential Smoothing":
-        st.subheader("Double Exponential Smoothing")
-        alpha, beta = 0.1, 0.3  # Best parameters after optimization
-        des_model = ExponentialSmoothing(train, trend="add").fit(smoothing_level=alpha, smoothing_slope=beta)
-        y_pred_des = des_model.forecast(len(test))
-        plot_forecast(train, test, y_pred_des, "Double Exponential Smoothing Forecast")
-        st.write(f"Mean Absolute Error (MAE): {np.mean(np.abs(test - y_pred_des)):.4f}")
-
     # Triple Exponential Smoothing (Holt-Winters)
-    elif forecast_type == "Triple Exponential Smoothing":
+    if forecast_type == "Triple Exponential Smoothing (Holt-Winters)":
         st.subheader("Triple Exponential Smoothing (Holt-Winters)")
         alpha, beta, gamma = 0.3, 0.5, 0.4  # Best parameters after optimization
         tes_model = ExponentialSmoothing(train, trend="add", seasonal="add", seasonal_periods=52).fit(smoothing_level=alpha, smoothing_slope=beta, smoothing_seasonal=gamma)
@@ -79,11 +61,12 @@ else:
         plot_forecast(train, test, y_pred_tes, "Triple Exponential Smoothing Forecast")
         st.write(f"Mean Absolute Error (MAE): {np.mean(np.abs(test - y_pred_tes)):.4f}")
 
-    # SARIMA
+    # SARIMA with fixed parameters
     elif forecast_type == "SARIMA":
         st.subheader("SARIMA")
-        order = (1, 1, 1)  # Order parameters
-        seasonal_order = (1, 1, 1, 52)  # Seasonal order parameters
+        # Using the best fixed parameters: (1, 0, 1)x(1, 1, 1, 52)
+        order = (1, 0, 1)
+        seasonal_order = (1, 1, 1, 52)
         sarima_model = SARIMAX(train, order=order, seasonal_order=seasonal_order).fit()
         y_pred_sarima = sarima_model.get_forecast(steps=len(test)).predicted_mean
         plot_forecast(train, test, y_pred_sarima, "SARIMA Forecast")
