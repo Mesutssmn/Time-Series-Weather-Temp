@@ -49,9 +49,12 @@ if forecast_type == "Triple Exponential Smoothing (Holt-Winters)":
     tes_model = ExponentialSmoothing(df['meantemp'], trend="add", seasonal="add", seasonal_periods=52).fit(smoothing_level=alpha, smoothing_slope=beta, smoothing_seasonal=gamma)
     forecast_index = pd.date_range(start=df.index[-1] + pd.Timedelta(days=1), periods=future_steps, freq='D')
     forecast = pd.Series(tes_model.forecast(future_steps), index=forecast_index)
-    plot_forecast(df['meantemp'], forecast, "Triple Exponential Smoothing Forecast")
-    st.write(f"Forecasted temperatures for the next {future_steps} days:")
-    st.dataframe(forecast)
+    if forecast.isnull().values.any():
+        st.error("The forecast contains missing values. Please check the model.")
+    else:
+        plot_forecast(df['meantemp'], forecast, "Triple Exponential Smoothing Forecast")
+        st.write(f"Forecasted temperatures for the next {future_steps} days:")
+        st.dataframe(forecast)
 
 elif forecast_type == "SARIMA":
     st.subheader(f"Forecasting the Next {future_steps} Days using SARIMA")
@@ -60,6 +63,9 @@ elif forecast_type == "SARIMA":
     sarima_model = SARIMAX(df['meantemp'], order=order, seasonal_order=seasonal_order).fit()
     forecast_index = pd.date_range(start=df.index[-1] + pd.Timedelta(days=1), periods=future_steps, freq='D')
     forecast = pd.Series(sarima_model.get_forecast(steps=future_steps).predicted_mean, index=forecast_index)
-    plot_forecast(df['meantemp'], forecast, "SARIMA Forecast")
-    st.write(f"Forecasted temperatures for the next {future_steps} days:")
-    st.dataframe(forecast)
+    if forecast.isnull().values.any():
+        st.error("The forecast contains missing values. Please check the model.")
+    else:
+        plot_forecast(df['meantemp'], forecast, "SARIMA Forecast")
+        st.write(f"Forecasted temperatures for the next {future_steps} days:")
+        st.dataframe(forecast)
