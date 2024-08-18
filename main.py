@@ -24,63 +24,54 @@ df = load_data()
 st.sidebar.header("Select Forecast Model")
 forecast_type = st.sidebar.selectbox("Choose a Model", ["Triple Exponential Smoothing (Holt-Winters)", "SARIMA"])
 
-# User-defined date range for prediction
-st.sidebar.header("Select Prediction Date Range")
-start_date = st.sidebar.date_input("Start Date", dt.date(2024, 5, 5))
-end_date = st.sidebar.date_input("End Date", dt.date(2024, 8, 30))
+# User-defined future prediction steps (in weeks)
+st.sidebar.header("Forecasting Parameters")
+future_steps = st.sidebar.number_input("Number of Weeks to Forecast", min_value=1, max_value=52, value=12)
 
-# Calculate the number of weeks between the start and end dates
-weeks_to_predict = pd.date_range(start=start_date, end=end_date, freq='W').shape[0]
+# Plotting the historical data
+st.subheader("Historical Data")
+st.line_chart(df)
 
-# Validate the date range
-if start_date >= end_date:
-    st.error("End Date must be after Start Date.")
-elif weeks_to_predict <= 0:
-    st.error("Invalid date range. Please select a valid range.")
-else:
-    # Plotting the historical data
-    st.subheader("Historical Data")
-    st.line_chart(df)
+# Function to display forecast results
+def plot_forecast(historical, forecast, title):
+    plt.figure(figsize=(10, 6))
+    plt.plot(historical.index, historical, label='Historical Data')
+    plt.plot(forecast.index, forecast, label='Forecast')
+    plt.title(title)
+    plt.xlabel("Date")
+    plt.ylabel("Temperature (°C)")
+    plt.legend()
+    st.pyplot(plt)
 
-    # Function to display forecast results
-    def plot_forecast(historical, forecast, title):
-        plt.figure(figsize=(10, 6))
-        plt.plot(historical.index, historical, label='Historical Data')
-        plt.plot(forecast.index, forecast, label='Forecast')
-        plt.title(title)
-        plt.xlabel("Date")
-        plt.ylabel("Temperature (°C)")
-        plt.legend()
-        st.pyplot(plt)
+# Model selection and forecasting
+try:
+    if forecast_type == "Triple Exponential Smoothing (Holt-Winters)":
+        st.subheader(f"Forecasting the Next {future_steps} Weeks using Triple Exponential Smoothing (Holt-Winters)")
+        alpha, beta, gamma = 0.3, 0.5, 0.4  # Pre-optimized parameters
+        # Adjust the seasonal_periods for weekly data
+        tes_model = ExponentialSmoothing(df, trend="add", seasonal="add", seasonal_periods=52).fit(
+            smoothing_level=alpha, smoothing_trend=beta, smoothing_seasonal=gamma)
+        forecast_index = pd.date_range(start=df.index[-1] + pd.Timedelta(weeks=1), periods=future_steps, freq='W')
+        forecast = pd.Series(tes_model.forecast(future_steps), index=forecast_index)
+        if forecast.isnull().values.any():
+            raise ValueError("The Triple Exponential Smoothing model returned missing values.")
+        plot_forecast(df, forecast, "Triple Exponential Smoothing Forecast")
+        st.write(f"Forecasted temperatures for the next {future_steps} weeks:")
+        st.dataframe(forecast)
 
-    # Model selection and forecasting
-    try:
-        if forecast_type == "Triple Exponential Smoothing (Holt-Winters)":
-            st.subheader(f"Forecasting from {start_date} to {end_date} using Triple Exponential Smoothing (Holt-Winters)")
-            alpha, beta, gamma = 0.3, 0.5, 0.4  # Pre-optimized parameters
-            tes_model = ExponentialSmoothing(df, trend="add", seasonal="add", seasonal_periods=52).fit(
-                smoothing_level=alpha, smoothing_trend=beta, smoothing_seasonal=gamma)
-            forecast_index = pd.date_range(start=start_date, end=end_date, freq='W')
-            forecast = pd.Series(tes_model.forecast(weeks_to_predict), index=forecast_index)
-            if forecast.isnull().values.any():
-                raise ValueError("The Triple Exponential Smoothing model returned missing values.")
-            plot_forecast(df, forecast, "Triple Exponential Smoothing Forecast")
-            st.write(f"Forecasted temperatures from {start_date} to {end_date}:")
-            st.dataframe(forecast)
+    elif forecast_type == "SARIMA":
+        st.subheader(f"Forecasting the Next {future_steps} Weeks using SARIMA")
+        order = (1, 0, 1)
+        seasonal_order = (1, 1, 1, 52)  # Pre-optimized parameters for weekly data
+        sarima_model = SARIMAX(df, order=order, seasonal_order=seasonal_order).fit()
+        forecast_index = pd.date_range(start=df.index[-1] + pd.Timedelta(weeks=1), periods=future_steps, freq='W')
+        forecast = pd.Series(sarima_model.get_forecast(steps=future_steps).predicted_mean, index=forecast_index)
+        if forecast.isnull().values.any():
+            raise ValueError("The SARIMA model returned missing values.")
+        plot_forecast(df, forecast, "SARIMA Forecast")
+        st.write(f"Forecasted temperatures for the next {future_steps} weeks:")
+        st.dataframe(forecast)
 
-        elif forecast_type == "SARIMA":
-            st.subheader(f"Forecasting from {start_date} to {end_date} using SARIMA")
-            order = (1, 0, 1)
-            seasonal_order = (1, 1, 1, 52)  # Pre-optimized parameters for weekly data
-            sarima_model = SARIMAX(df, order=order, seasonal_order=seasonal_order).fit()
-            forecast_index = pd.date_range(start=start_date, end=end_date, freq='W')
-            forecast = pd.Series(sarima_model.get_forecast(steps=weeks_to_predict).predicted_mean, index=forecast_index)
-            if forecast.isnull().values.any():
-                raise ValueError("The SARIMA model returned missing values.")
-            plot_forecast(df, forecast, "SARIMA Forecast")
-            st.write(f"Forecasted temperatures from {start_date} to {end_date}:")
-            st.dataframe(forecast)
-
-    except ValueError as e:
-        st.error(f"Model Error: {e}")
-        st.write("Please try a different model or adjust the model parameters.")
+except ValueError as e:
+    st.error(f"Model Error: {e}")
+    st.write("Please try a different model or adjust the model parameters.")
