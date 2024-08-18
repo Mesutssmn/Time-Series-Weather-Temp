@@ -9,8 +9,8 @@ from statsmodels.tsa.statespace.sarimax import SARIMAX
 # Load the dataset
 @st.cache
 def load_data():
-    train = pd.read_csv('/kaggle/input/daily-climate-time-series-data/DailyDelhiClimateTrain.csv')
-    test = pd.read_csv('/kaggle/input/daily-climate-time-series-data/DailyDelhiClimateTest.csv')
+    train = pd.read_csv('ClimateTrain.csv')
+    test = pd.read_csv('ClimateTest.csv')
     df = pd.concat([train, test])
     df['date'] = pd.to_datetime(df['date'])
     df.set_index('date', inplace=True)
