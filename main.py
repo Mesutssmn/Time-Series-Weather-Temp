@@ -23,34 +23,12 @@ df = load_data()
 st.sidebar.header("Select Forecast Type")
 forecast_type = st.sidebar.selectbox("Select Model", ["Single Exponential Smoothing", "Double Exponential Smoothing", "Triple Exponential Smoothing", "SARIMA"])
 
-# Columns for forecast duration
-col1, col2, col3 = st.columns(3)
+# User-defined date range
+st.sidebar.header("Select Date Range")
+start_date = st.sidebar.date_input("Start Date", dt.date(2013, 1, 1))
+end_date = st.sidebar.date_input("End Date", dt.datetime.today().date())
 
-with col1:
-    last30 = st.button("Last 30 Days")
-
-with col2:
-    last90 = st.button("Last 90 Days")
-
-with col3:
-    last365 = st.button("Last 365 Days")
-
-# Get today's date
-today = dt.datetime.today().date()
-
-# Adjust date range based on button click
-if last30:
-    start_date = today - dt.timedelta(days=30)
-elif last90:
-    start_date = today - dt.timedelta(days=90)
-elif last365:
-    start_date = today - dt.timedelta(days=365)
-else:
-    start_date = dt.datetime(2013, 1, 1)  # Default start date for full dataset
-
-end_date = today
-
-# Filter data based on date range
+# Filter data based on the user-selected date range
 filtered_data = df.loc[start_date:end_date]
 
 # Check if the filtered data is empty
