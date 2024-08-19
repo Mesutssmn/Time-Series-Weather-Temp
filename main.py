@@ -5,6 +5,10 @@ import datetime as dt
 import matplotlib.pyplot as plt
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 from statsmodels.tsa.statespace.sarimax import SARIMAX
+import warnings
+
+# Suppress specific warnings
+warnings.filterwarnings("ignore", category=UserWarning)
 
 # Load the dataset
 @st.cache_data
@@ -14,7 +18,7 @@ def load_data():
     df = pd.concat([train, test])
     df['date'] = pd.to_datetime(df['date'])
     df.set_index('date', inplace=True)
-    df = df["meantemp"].resample('W').mean()  # Resampling to weekly mean
+    df = df["meantemp"].resample('W').mean() 
     return df
 
 # Load and process the dataset
@@ -47,7 +51,7 @@ def plot_forecast(historical, forecast, title):
 try:
     if forecast_type == "Triple Exponential Smoothing (Holt-Winters)":
         st.subheader(f"Forecasting the Next {future_steps} Weeks using Triple Exponential Smoothing (Holt-Winters)")
-        alpha, beta, gamma = 0.3, 0.5, 0.4  # Pre-optimized parameters
+        alpha, beta, gamma = 0.3, 0.5, 0.4  
         # Adjust the seasonal_periods for weekly data
         tes_model = ExponentialSmoothing(df, trend="add", seasonal="add", seasonal_periods=52).fit(
             smoothing_level=alpha, smoothing_trend=beta, smoothing_seasonal=gamma)
@@ -62,8 +66,9 @@ try:
     elif forecast_type == "SARIMA":
         st.subheader(f"Forecasting the Next {future_steps} Weeks using SARIMA")
         order = (1, 0, 1)
-        seasonal_order = (1, 1, 1, 52)  # Pre-optimized parameters for weekly data
-        sarima_model = SARIMAX(df, order=order, seasonal_order=seasonal_order).fit()
+        seasonal_order = (1, 1, 1, 52)
+        # Try to improve model convergence by tweaking initial parameters
+        sarima_model = SARIMAX(df, order=order, seasonal_order=seasonal_order, enforce_stationarity=False, enforce_invertibility=False).fit(disp=False)
         forecast_index = pd.date_range(start=df.index[-1] + pd.Timedelta(weeks=1), periods=future_steps, freq='W')
         forecast = pd.Series(sarima_model.get_forecast(steps=future_steps).predicted_mean, index=forecast_index)
         if forecast.isnull().values.any():
