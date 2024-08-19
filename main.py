@@ -4,7 +4,6 @@ import streamlit as st
 import datetime as dt
 import matplotlib.pyplot as plt
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
-from statsmodels.tsa.statespace.sarimax import SARIMAX
 import warnings
 
 # Suppress specific warnings
@@ -26,7 +25,7 @@ df = load_data()
 
 # Sidebar options
 st.sidebar.header("Select Forecast Model")
-forecast_type = st.sidebar.selectbox("Choose a Model", ["Triple Exponential Smoothing (Holt-Winters)", "SARIMA"])
+forecast_type = st.sidebar.selectbox("Choose a Model", ["Triple Exponential Smoothing (Holt-Winters)"])
 
 # User-defined future prediction steps (in weeks)
 st.sidebar.header("Forecasting Parameters")
@@ -63,20 +62,6 @@ try:
         st.write(f"Forecasted temperatures for the next {future_steps} weeks:")
         st.dataframe(forecast)
 
-    elif forecast_type == "SARIMA":
-        st.subheader(f"Forecasting the Next {future_steps} Weeks using SARIMA")
-        order = (1, 0, 1)
-        seasonal_order = (1, 1, 1, 52)
-        # Try to improve model convergence by tweaking initial parameters
-        sarima_model = SARIMAX(df, order=order, seasonal_order=seasonal_order, enforce_stationarity=False, enforce_invertibility=False).fit(disp=False)
-        forecast_index = pd.date_range(start=df.index[-1] + pd.Timedelta(weeks=1), periods=future_steps, freq='W')
-        forecast = pd.Series(sarima_model.get_forecast(steps=future_steps).predicted_mean, index=forecast_index)
-        if forecast.isnull().values.any():
-            raise ValueError("The SARIMA model returned missing values.")
-        plot_forecast(df, forecast, "SARIMA Forecast")
-        st.write(f"Forecasted temperatures for the next {future_steps} weeks:")
-        st.dataframe(forecast)
-
 except ValueError as e:
     st.error(f"Model Error: {e}")
-    st.write("Please try a different model or adjust the model parameters.")
+    st.write("Please try adjusting the model parameters.")
